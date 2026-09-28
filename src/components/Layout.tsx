@@ -21,7 +21,7 @@ export function Layout() {
           fun<span>mental</span>
         </NavLink>
         <nav>
-          <NavLink to="/" end>
+          <NavLink to="/" end className="nav-home">
             Dashboard
           </NavLink>
           <NavLink to="/learn">Learn</NavLink>

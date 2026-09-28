@@ -72,9 +72,28 @@ export interface SessionRecord {
   tierEnd: number
 }
 
+export interface Profile {
+  name: string
+  createdAt: number
+}
+
+/** Where a subject began; recorded on the first placement test and never overwritten. */
+export interface PlacementRecord {
+  tier: number
+  at: number
+}
+
+export interface BadgeAward {
+  earnedAt: number
+}
+
 export interface AppData {
   version: 1
+  profile: Profile
   subjects: Record<SubjectId, SubjectProgress>
+  placements: Partial<Record<SubjectId, PlacementRecord>>
+  /** Earned badges by badge id. Once earned, a badge is never taken away. */
+  badges: Record<string, BadgeAward>
   sessions: SessionRecord[]
   /** Local dates (YYYY-MM-DD) with at least one answered question. */
   activeDays: string[]

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
+import { BadgeCard } from '../components/BadgeCard'
 import { QuestionView } from '../components/QuestionView'
 import { TierTrack } from '../components/TierTrack'
 import { nextQuestion } from '../content'
@@ -11,7 +12,8 @@ import {
   startPlacement,
   type PlacementState,
 } from '../lib/leveling'
-import { setPlacement } from '../lib/store'
+import { badgeById } from '../lib/badges'
+import { setPlacement, useAppData } from '../lib/store'
 import { isSubject, subjectMeta } from '../lib/subjects'
 import { bandOf, tierLabel } from '../lib/tiers'
 import type { Question, SubjectId } from '../types'
@@ -29,6 +31,8 @@ function PlacementTest({ subject }: { subject: SubjectId }) {
   const [question, setQuestion] = useState<Question | null>(null)
   const [seen] = useState(() => new Set<string>())
   const [result, setResult] = useState<number | null>(null)
+  const [earned, setEarned] = useState<string[]>([])
+  const data = useAppData()
 
   const ask = (s: PlacementState) => {
     const q = nextQuestion(subject, s.tier, 'placement', seen)
@@ -48,7 +52,7 @@ function PlacementTest({ subject }: { subject: SubjectId }) {
     setState(next)
     if (placementDone(next)) {
       const tier = placementResult(next)
-      setPlacement(subject, tier)
+      setEarned(setPlacement(subject, tier))
       setResult(tier)
     } else {
       ask(next)
@@ -57,13 +61,28 @@ function PlacementTest({ subject }: { subject: SubjectId }) {
 
   if (result !== null) {
     return (
-      <div className="panel play-done">
+      <div className={`panel play-done subject-${subject}`}>
         <p className="eyebrow">{meta.name} placement complete</p>
         <h1>{tierLabel(result)}</h1>
         <p className="lead">
           You're starting in <strong>{bandOf(result).name}</strong>. Keep playing to climb toward College III.
         </p>
         <TierTrack tier={result} />
+        {earned.length > 0 ? (
+          <div className="earned-badges">
+            <p className="eyebrow">Badge earned</p>
+            {earned.map((id) => {
+              const badge = badgeById(id)
+              return badge && <BadgeCard key={id} badge={badge} data={data} fresh />
+            })}
+          </div>
+        ) : (
+          data.placements[subject] && (
+            <p className="muted">
+              Your {meta.name} Starting Line badge still shows where you began: {tierLabel(data.placements[subject].tier)}.
+            </p>
+          )
+        )}
         <div className="row">
           <button className="btn primary big" onClick={() => navigate(`/subject/${subject}`)}>
             Start training

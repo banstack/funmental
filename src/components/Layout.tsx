@@ -1,6 +1,9 @@
 import { useEffect } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { streak, useAppData } from '../lib/store'
+import { streak } from '../lib/stats'
+import { useAppData } from '../lib/store'
+import { Avatar } from './Avatar'
+import { BadgeToaster } from './BadgeToaster'
 
 export function Layout() {
   const data = useAppData()
@@ -23,14 +26,16 @@ export function Layout() {
           </NavLink>
           <NavLink to="/learn">Learn</NavLink>
           <NavLink to="/history">History</NavLink>
-          <span className="streak" title="Daily streak">
-            🔥 {days}
-          </span>
+          <NavLink to="/profile" className="profile-chip" aria-label={`Profile, ${days} day streak`}>
+            <Avatar name={data.profile.name} size="sm" />
+            <span className="streak">🔥 {days}</span>
+          </NavLink>
         </nav>
       </header>
       <main className="main">
         <Outlet />
       </main>
+      <BadgeToaster />
     </div>
   )
 }

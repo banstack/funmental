@@ -5,6 +5,7 @@ import { History } from './pages/History'
 import { Learn, LearnIndex } from './pages/Learn'
 import { Placement } from './pages/Placement'
 import { Play } from './pages/Play'
+import { Profile } from './pages/Profile'
 import { SubjectPage } from './pages/SubjectPage'
 
 export default function App() {
@@ -20,6 +21,7 @@ export default function App() {
           <Route path="learn/:subject" element={<LearnIndex />} />
           <Route path="learn/:subject/:grade" element={<Learn />} />
           <Route path="history" element={<History />} />
+          <Route path="profile" element={<Profile />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

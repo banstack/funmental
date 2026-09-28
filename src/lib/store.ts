@@ -1,30 +1,17 @@
 import { useSyncExternalStore } from 'react'
 import type { AppData, SessionRecord, SubjectId, SubjectProgress } from '../types'
-import { applyAnswer, newProgress, type TierChange } from './leveling'
+import { newlyEarned } from './badges'
+import { emptyData, migrate } from './data'
+import { applyAnswer, type TierChange } from './leveling'
+import { todayKey } from './stats'
 
 const KEY = 'funmental:v1'
 const MAX_SESSIONS = 500
 
-function emptyData(): AppData {
-  return {
-    version: 1,
-    subjects: { math: newProgress(), reading: newProgress(), science: newProgress() },
-    sessions: [],
-    activeDays: [],
-  }
-}
-
 function load(): AppData {
   try {
     const raw = localStorage.getItem(KEY)
-    if (!raw) return emptyData()
-    const parsed = JSON.parse(raw) as AppData
-    const base = emptyData()
-    return {
-      ...base,
-      ...parsed,
-      subjects: { ...base.subjects, ...parsed.subjects },
-    }
+    return raw ? migrate(JSON.parse(raw)) : emptyData()
   } catch {
     return emptyData()
   }
@@ -33,7 +20,18 @@ function load(): AppData {
 let data: AppData = load()
 const listeners = new Set<() => void>()
 
-function commit(next: AppData) {
+// Badges earned during this visit, waiting to be shown as toasts.
+let toasts: string[] = []
+const toastListeners = new Set<() => void>()
+
+/**
+ * Saves the next state, awarding any badges it now qualifies for. Pass
+ * `announce: false` when the caller shows the new badges itself.
+ */
+function commit(next: AppData, { announce = true } = {}): string[] {
+  const awards = newlyEarned(next)
+  const earned = Object.keys(awards)
+  if (earned.length) next = { ...next, badges: { ...next.badges, ...awards } }
   data = next
   try {
     localStorage.setItem(KEY, JSON.stringify(next))
@@ -41,6 +39,11 @@ function commit(next: AppData) {
     // Storage unavailable (private mode, quota); keep in-memory state.
   }
   listeners.forEach((l) => l())
+  if (announce && earned.length) {
+    toasts = [...toasts, ...earned]
+    toastListeners.forEach((l) => l())
+  }
+  return earned
 }
 
 function subscribe(listener: () => void) {
@@ -56,14 +59,23 @@ export function getData(): AppData {
   return data
 }
 
-export function todayKey(d = new Date()): string {
-  const m = String(d.getMonth() + 1).padStart(2, '0')
-  const day = String(d.getDate()).padStart(2, '0')
-  return `${d.getFullYear()}-${m}-${day}`
+export function useBadgeToasts(): string[] {
+  return useSyncExternalStore(
+    (l) => {
+      toastListeners.add(l)
+      return () => toastListeners.delete(l)
+    },
+    () => toasts,
+  )
+}
+
+export function dismissBadgeToast(id: string) {
+  toasts = toasts.filter((t) => t !== id)
+  toastListeners.forEach((l) => l())
 }
 
 function updateSubject(subject: SubjectId, progress: SubjectProgress, extra: Partial<AppData> = {}) {
-  commit({ ...data, ...extra, subjects: { ...data.subjects, [subject]: progress } })
+  return commit({ ...data, ...extra, subjects: { ...data.subjects, [subject]: progress } })
 }
 
 export function recordAnswer(subject: SubjectId, correct: boolean): TierChange {
@@ -74,34 +86,36 @@ export function recordAnswer(subject: SubjectId, correct: boolean): TierChange {
   return change
 }
 
-export function setPlacement(subject: SubjectId, tier: number) {
+/**
+ * Sets the subject's level from a placement test. The first placement is kept
+ * as the subject's starting point; retakes move the level but not the start.
+ * Returns ids of badges earned, which the caller is expected to show.
+ */
+export function setPlacement(subject: SubjectId, tier: number): string[] {
   const prev = data.subjects[subject]
-  updateSubject(subject, {
-    ...prev,
-    tier,
-    placed: true,
-    window: [],
-    bestTier: Math.max(prev.placed ? prev.bestTier : 0, tier),
-  })
+  const placements = data.placements[subject] ? data.placements : { ...data.placements, [subject]: { tier, at: Date.now() } }
+  return commit(
+    {
+      ...data,
+      placements,
+      subjects: {
+        ...data.subjects,
+        [subject]: { ...prev, tier, placed: true, window: [], bestTier: Math.max(prev.placed ? prev.bestTier : 0, tier) },
+      },
+    },
+    { announce: false },
+  )
 }
 
 export function addSession(session: SessionRecord) {
   commit({ ...data, sessions: [session, ...data.sessions].slice(0, MAX_SESSIONS) })
 }
 
-export function resetAll() {
-  commit(emptyData())
+export function setProfileName(name: string) {
+  commit({ ...data, profile: { ...data.profile, name: name.trim().slice(0, 40) } })
 }
 
-/** Consecutive active days ending today (or yesterday, if not yet played today). */
-export function streak(activeDays: string[]): number {
-  const days = new Set(activeDays)
-  const d = new Date()
-  if (!days.has(todayKey(d))) d.setDate(d.getDate() - 1)
-  let count = 0
-  while (days.has(todayKey(d))) {
-    count++
-    d.setDate(d.getDate() - 1)
-  }
-  return count
+export function resetAll() {
+  toasts = []
+  commit(emptyData(), { announce: false })
 }

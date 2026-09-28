@@ -651,6 +651,214 @@ button { font: inherit; color: inherit; }
   .subject-hero .subject-card-head { flex-wrap: wrap; }
 }
 
+/* ---------- profile & badges ---------- */
+
+.profile-chip { display: inline-flex !important; align-items: center; gap: 6px; padding: 4px 10px 4px 4px !important; }
+.profile-chip .streak { padding: 0; }
+
+.avatar {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--brand), color-mix(in srgb, var(--brand) 55%, var(--science)));
+  color: #fff;
+  font-weight: 900;
+}
+.avatar.sm { width: 28px; height: 28px; font-size: 0.85rem; }
+.avatar.md { width: 44px; height: 44px; font-size: 1.2rem; }
+.avatar.lg { width: 80px; height: 80px; font-size: 2.2rem; }
+
+.profile { display: flex; flex-direction: column; gap: 20px; }
+.profile-header { flex-direction: row; align-items: center; gap: 20px; flex-wrap: wrap; }
+.profile-id { flex: 1 1 240px; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.name-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.name-row h1 { overflow-wrap: anywhere; }
+.name-input {
+  font: inherit;
+  font-size: 1.4rem;
+  font-weight: 800;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  min-width: 0;
+  flex: 1 1 180px;
+  max-width: 320px;
+}
+.name-input:focus { border-color: var(--brand); }
+.profile-summary { display: flex; gap: 24px; }
+.profile-summary > div { display: flex; flex-direction: column; }
+.kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.kpi-row .stat { min-width: 0; }
+
+.badge-group { display: flex; flex-direction: column; gap: 12px; }
+.badge-group h3 { margin: 0; font-size: 0.78rem; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.badge-body { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+/* Medal artwork */
+.badge-art { display: block; overflow: visible; filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.28)); transition: transform 0.25s ease, filter 0.25s ease; }
+.badge-art .badge-glyph { font-family: 'Nunito', system-ui, sans-serif; font-weight: 900; font-size: 30px; paint-order: stroke; stroke: rgb(0 0 0 / 0.18); stroke-width: 2px; }
+.badge-art .badge-banner { font-family: 'Nunito', system-ui, sans-serif; font-weight: 900; font-size: 10.5px; letter-spacing: 0.08em; }
+.badge-art .badge-shine { transform: translateX(-70px); transition: transform 0.7s ease; }
+.badge-art .badge-sparkles path { transform-box: fill-box; transform-origin: center; animation: twinkle 2.4s ease-in-out infinite; }
+.badge-art .badge-sparkles path:nth-child(2) { animation-delay: 1.2s; }
+.badge-art.locked { filter: grayscale(0.9) brightness(0.95); opacity: 0.7; }
+.badge-art.metal-diamond:not(.locked) { filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.28)) drop-shadow(0 0 10px rgb(143 227 255 / 0.45)); }
+.badge-art.metal-gold:not(.locked) { filter: drop-shadow(0 6px 10px rgb(0 0 0 / 0.28)) drop-shadow(0 0 8px rgb(242 194 48 / 0.35)); }
+.badge-art.fresh { animation: medal-pop 0.7s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+.badge-art.fresh .badge-shine { animation: shine 1.1s 0.5s ease both; }
+
+.badge-card:hover .badge-art:not(.locked) { transform: translateY(-4px) rotate(-4deg) scale(1.04); }
+.badge-card:hover .badge-art .badge-shine { transform: translateX(80px); }
+
+/* Profile showcase: medals only, details in a modal */
+.badge-showcase { background: radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--brand) 12%, transparent), transparent 60%), var(--surface); }
+.badge-grid { display: flex; flex-wrap: wrap; gap: 10px; }
+.badge-button {
+  display: grid;
+  place-items: center;
+  padding: 8px 8px 4px;
+  border: none;
+  border-radius: 16px;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.badge-button:hover, .badge-button:focus-visible { background: var(--surface-2); }
+.badge-button:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.badge-button:hover .badge-art:not(.locked) { transform: translateY(-4px) rotate(-4deg) scale(1.06); }
+.badge-button:hover .badge-art .badge-shine { transform: translateX(80px); }
+
+.badge-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgb(0 0 0 / 0.55);
+  backdrop-filter: blur(3px);
+  animation: fade 0.2s ease;
+}
+.badge-modal {
+  position: relative;
+  width: min(380px, 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+  padding: 32px 24px 26px;
+  border-radius: 24px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  box-shadow: 0 24px 60px rgb(0 0 0 / 0.4);
+  animation: rise 0.25s ease;
+}
+.badge-modal.earned { background: radial-gradient(ellipse at 50% 0%, color-mix(in srgb, var(--accent) 22%, transparent), transparent 65%), var(--surface); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
+.badge-modal .badge-art { margin-bottom: 8px; }
+.badge-modal h2 { font-size: 1.5rem; font-weight: 900; }
+.badge-modal-detail { font-weight: 800; font-size: 1.05rem; }
+.badge-modal .btn { margin-top: 8px; }
+.badge-modal-close { position: absolute; top: 12px; right: 12px; }
+
+/* Horizontal card (placement results) */
+.badge-card {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 12px 18px 12px 12px;
+  border-radius: 18px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+.badge-card.earned { background: color-mix(in srgb, var(--accent) 8%, var(--surface)); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); }
+
+.badge-toast {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  max-width: min(420px, calc(100vw - 32px));
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: 0 12px 40px rgb(0 0 0 / 0.25);
+  animation: rise 0.35s ease;
+}
+.badge-toast .eyebrow { color: var(--brand); }
+.badge-toast-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+.earned-badges { display: flex; flex-direction: column; gap: 8px; width: 100%; }
+
+.profile-subjects { display: flex; flex-direction: column; gap: 16px; }
+.profile-subject {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--accent);
+}
+.profile-subject-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.profile-subject-head h3 { margin: 0; font-size: 1.15rem; font-weight: 900; }
+.climb { margin-left: auto; font-weight: 800; font-size: 0.9rem; color: var(--muted); }
+.climb.up { color: var(--good); }
+.climb.down { color: var(--bad); }
+.profile-facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 10px; margin: 0; }
+.profile-facts > div { background: var(--surface-2); border-radius: 12px; padding: 10px 12px; }
+.profile-facts dt { font-size: 0.75rem; font-weight: 700; color: var(--muted); }
+.profile-facts dd { margin: 2px 0 0; font-weight: 900; }
+
+.track-step.start { box-shadow: inset 0 0 0 2px var(--text); }
+.track-step.current.start { box-shadow: inset 0 0 0 2px var(--text), 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
+.track-key { display: flex; gap: 16px; }
+.track-key span { display: inline-flex; align-items: center; gap: 6px; }
+.key-swatch { width: 14px; height: 14px; border-radius: 4px; display: inline-block; background: var(--surface-2); }
+.key-swatch.start { box-shadow: inset 0 0 0 2px var(--text); }
+.key-swatch.current { background: var(--accent); }
+
+/* Sequential single-hue ramp: surface → brand, so it reads light→dark in light mode and dark→bright in dark mode. */
+.heatmap { --cell: 14px; display: flex; flex-direction: column; gap: 10px; }
+.heatmap-scroll { overflow-x: auto; }
+.heatmap-grid { display: grid; grid-template-rows: auto repeat(7, var(--cell)); grid-auto-flow: row; gap: 3px; width: max-content; }
+.heatmap-month { font-size: 0.7rem; color: var(--muted); font-weight: 700; white-space: nowrap; overflow: visible; width: var(--cell); }
+.heatmap-day { font-size: 0.68rem; color: var(--muted); font-weight: 700; padding-right: 6px; line-height: var(--cell); }
+.heatmap-cell { display: inline-block; width: var(--cell); height: var(--cell); border-radius: 3px; }
+.heatmap-cell.l0 { background: var(--surface-2); }
+.heatmap-cell.l1 { background: color-mix(in oklab, var(--brand) 30%, var(--surface-2)); }
+.heatmap-cell.l2 { background: color-mix(in oklab, var(--brand) 55%, var(--surface-2)); }
+.heatmap-cell.l3 { background: color-mix(in oklab, var(--brand) 78%, var(--surface-2)); }
+.heatmap-cell.l4 { background: var(--brand); }
+.heatmap-cell.today { outline: 2px solid var(--text); outline-offset: 1px; }
+.heatmap-grid .heatmap-cell:hover { outline: 2px solid var(--text); outline-offset: 1px; }
+.heatmap-foot { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; align-items: center; }
+.heatmap-legend { display: inline-flex; align-items: center; gap: 3px; }
+.heatmap-legend .heatmap-cell { width: 11px; height: 11px; }
+
+@keyframes fade { from { opacity: 0; } }
+@keyframes rise { from { transform: translateY(12px); opacity: 0; } }
+@keyframes twinkle { 0%, 100% { opacity: 0.25; transform: scale(0.7); } 50% { opacity: 1; transform: scale(1.1); } }
+@keyframes medal-pop { 0% { transform: scale(0.3) rotate(-25deg); opacity: 0; } 100% { transform: none; opacity: 1; } }
+@keyframes shine { from { transform: translateX(-70px); } to { transform: translateX(80px); } }
+
+@media (max-width: 600px) {
+  .profile-header { flex-direction: column; align-items: flex-start; }
+  .profile-id { flex: none; width: 100%; }
+  .profile-summary { width: 100%; }
+  .badge-toast { left: 16px; right: 16px; bottom: 16px; }
+  .topbar { gap: 8px; }
+  .topbar nav { gap: 0; }
+  .profile-chip .streak { font-size: 0.9rem; }
+}
+
 @keyframes pulse { 50% { opacity: 0.5; } }
 @keyframes pop { from { transform: translate(-50%, -8px) scale(0.9); opacity: 0; } }
 

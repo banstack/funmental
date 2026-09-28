@@ -79,3 +79,11 @@ export function answeredByDay(sessions: SessionRecord[]): Map<string, number> {
   }
   return out
 }
+
+/** Questions answered over the last `days` days, including today. */
+export function answeredInLastDays(sessions: SessionRecord[], days: number, now = new Date()): number {
+  const start = new Date(now)
+  start.setHours(0, 0, 0, 0)
+  start.setDate(start.getDate() - (days - 1))
+  return sessions.reduce((sum, s) => (s.startedAt >= start.getTime() ? sum + s.answered : sum), 0)
+}

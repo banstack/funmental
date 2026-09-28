@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import type { SessionRecord } from '../types'
 import { BADGES, newlyEarned } from './badges'
 import { emptyData, migrate } from './data'
-import { longestStreak, personalBest, streak } from './stats'
+import { answeredInLastDays, longestStreak, personalBest, streak } from './stats'
 
 const DAY = 86_400_000
 
@@ -120,5 +120,16 @@ describe('stats', () => {
     expect(personalBest(sessions, 'math', 'rapid')?.correct).toBe(15)
     expect(personalBest(sessions, 'math', 'quiz')?.correct).toBe(4)
     expect(personalBest(sessions, 'reading', 'quiz')).toBeNull()
+  })
+
+  it('sums questions answered over the last 7 days, including today', () => {
+    const now = new Date(2026, 8, 28, 15)
+    const at = (day: number, hour = 10) => new Date(2026, 8, day, hour).getTime()
+    const sessions = [
+      session({ startedAt: at(28), answered: 10 }),
+      session({ startedAt: at(22, 0), answered: 5 }), // 6 days ago, just after midnight
+      session({ startedAt: at(21, 23), answered: 99 }), // 7 days ago: outside the window
+    ]
+    expect(answeredInLastDays(sessions, 7, now)).toBe(15)
   })
 })

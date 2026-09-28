@@ -17,7 +17,7 @@ describe('study guide lessons', () => {
         expect(lesson.topics.length).toBeGreaterThanOrEqual(3)
         const ids = lesson.topics.map((t) => slug(t.title))
         expect(new Set(ids).size).toBe(ids.length)
-        for (const id of ids) expect(['key-formulas', 'key-vocabulary', 'practice']).not.toContain(id)
+        for (const id of ids) expect(['key-formulas', 'key-vocabulary', 'master', 'practice']).not.toContain(id)
         for (const t of lesson.topics) expect(t.body.length).toBeGreaterThan(0)
       }
     })

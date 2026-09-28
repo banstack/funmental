@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
+import { MasteryQuiz } from '../components/MasteryQuiz'
 import { RichText } from '../components/RichText'
 import { getLesson, lessonsFor, slug, vocabularyFor, type Lesson } from '../content/lessons'
+import { masteredCount, masteryKey, resetMastery, useMastery } from '../lib/mastery'
 import { useAppData } from '../lib/store'
 import { isSubject, learnPath, MODES, SUBJECTS, subjectMeta } from '../lib/subjects'
 import { BANDS, bandOf, MAX_TIER, parseTierSlug, TIERS, tierLabel } from '../lib/tiers'
@@ -21,11 +23,12 @@ interface Section {
   title: string
 }
 
-function sectionsOf(lesson: Lesson, hasVocab: boolean): Section[] {
+function sectionsOf(lesson: Lesson, hasVocab: boolean, tier: number): Section[] {
   const out = lesson.topics.map((t) => ({ id: slug(t.title), title: t.title }))
   if (lesson.formulas?.length) out.push({ id: 'key-formulas', title: 'Key formulas' })
   if (hasVocab) out.push({ id: 'key-vocabulary', title: 'Key vocabulary' })
-  out.push({ id: 'practice', title: 'Practice' })
+  out.push({ id: 'master', title: `Master ${tierLabel(tier)}` })
+  out.push({ id: 'practice', title: 'Training' })
   return out
 }
 
@@ -83,7 +86,10 @@ function LearnPage({ subject, tier }: { subject: SubjectId; tier: number }) {
   const progress = data.subjects[subject]
   const lesson = getLesson(subject, tier)!
   const vocab = vocabularyFor(subject, tier)
-  const sections = useMemo(() => sectionsOf(lesson, vocab.length > 0), [lesson, vocab.length])
+  const sections = useMemo(() => sectionsOf(lesson, vocab.length > 0, tier), [lesson, vocab.length, tier])
+  const mastery = useMastery()
+  const isMastered = (t: number) => Boolean(mastery.grades[masteryKey(subject, t)]?.masteredAt)
+  const mastered = masteredCount(mastery, subject)
   const sectionIds = useMemo(() => sections.map((s) => s.id), [sections])
   const [active, jumpTo] = useActiveSection(sectionIds)
   const navRef = useRef<HTMLElement>(null)
@@ -125,6 +131,7 @@ function LearnPage({ subject, tier }: { subject: SubjectId; tier: number }) {
             )
           })}
         </div>
+        <MasterySummary subject={subject} mastered={mastered} />
         <nav className="wiki-toc" aria-label={`${meta.name} study guide`}>
           {BANDS.map((band) => (
             <div key={band.name} className="wiki-band">
@@ -143,6 +150,11 @@ function LearnPage({ subject, tier }: { subject: SubjectId; tier: number }) {
                         <span className="wiki-grade-name">
                           {tierLabel(t)}
                           {progress.placed && progress.tier === t && <span className="you">You</span>}
+                          {isMastered(t) && (
+                            <span className="mastered-check" role="img" aria-label="Mastered" title="Mastered">
+                              ✓
+                            </span>
+                          )}
                         </span>
                         <span className="wiki-grade-title">{lessonsFor(subject)[t].title}</span>
                       </Link>
@@ -179,6 +191,7 @@ function LearnPage({ subject, tier }: { subject: SubjectId; tier: number }) {
         <header className="wiki-header">
           <p className="eyebrow">
             {meta.name} · {tierLabel(tier)}
+            {isMastered(tier) && <span className="mastered-pill">✓ Mastered</span>}
           </p>
           <h1>{lesson.title}</h1>
           <p className="lead">{lesson.summary}</p>
@@ -262,8 +275,13 @@ function LearnPage({ subject, tier }: { subject: SubjectId; tier: number }) {
           </section>
         )}
 
+        <section id="master" className="wiki-section">
+          <h2>Master {tierLabel(tier)}</h2>
+          <MasteryQuiz key={`${subject}-${tier}`} subject={subject} tier={tier} />
+        </section>
+
         <section id="practice" className="wiki-section">
-          <h2>Practice</h2>
+          <h2>Training</h2>
           <PracticeCard subject={subject} tier={tier} />
         </section>
 
@@ -284,6 +302,45 @@ function LearnPage({ subject, tier }: { subject: SubjectId; tier: number }) {
           )}
         </nav>
       </article>
+    </div>
+  )
+}
+
+/** "3 of 15 grades mastered" with a progress bar and a two-step reset. */
+function MasterySummary({ subject, mastered }: { subject: SubjectId; mastered: number }) {
+  const [confirming, setConfirming] = useState(false)
+  const total = TIERS.length
+  return (
+    <div className="mastery-summary">
+      <div className="mastery-summary-head">
+        <span>
+          <strong>{mastered}</strong>/{total} grades mastered
+        </span>
+        {mastered > 0 &&
+          (confirming ? (
+            <span className="mastery-reset">
+              <button
+                className="link-btn danger"
+                onClick={() => {
+                  resetMastery(subject)
+                  setConfirming(false)
+                }}
+              >
+                Reset
+              </button>
+              <button className="link-btn" onClick={() => setConfirming(false)}>
+                Cancel
+              </button>
+            </span>
+          ) : (
+            <button className="link-btn" onClick={() => setConfirming(true)} aria-label={`Reset ${subjectMeta(subject).name} mastery`}>
+              Reset
+            </button>
+          ))}
+      </div>
+      <div className="bar small mastery-bar">
+        <div className="bar-fill" style={{ width: `${(mastered / total) * 100}%` }} />
+      </div>
     </div>
   )
 }

@@ -612,6 +612,62 @@ button { font: inherit; color: inherit; }
 
 .wiki-practice > .btn { align-self: flex-start; }
 
+/* Grade mastery (Learn only) */
+.mastered-check {
+  display: inline-grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--good);
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 900;
+  line-height: 1;
+}
+.mastered-check.big { width: 44px; height: 44px; font-size: 1.4rem; box-shadow: 0 0 0 5px color-mix(in srgb, var(--good) 22%, transparent); }
+.mastered-check.pop { animation: medal-pop 0.6s cubic-bezier(0.2, 1.4, 0.4, 1) both; }
+.wiki-grade-name .mastered-check { margin-left: auto; }
+.mastered-pill {
+  margin-left: 10px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--good) 16%, transparent);
+  color: var(--good);
+  letter-spacing: 0.04em;
+}
+
+.mastery-summary { display: flex; flex-direction: column; gap: 6px; padding: 0 4px; font-size: 0.85rem; }
+.mastery-summary-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; color: var(--muted); font-weight: 700; }
+.mastery-summary-head strong { color: var(--text); }
+.mastery-bar .bar-fill { background: var(--good); }
+.mastery-reset { display: inline-flex; gap: 10px; }
+.link-btn { background: none; border: none; padding: 0; font-size: 0.8rem; font-weight: 700; color: var(--muted); cursor: pointer; }
+.link-btn:hover { color: var(--text); text-decoration: underline; }
+.link-btn.danger { color: var(--bad); }
+
+.mastery-quiz {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  scroll-margin-top: 16px;
+}
+.mastery-quiz.is-mastered { border-color: color-mix(in srgb, var(--good) 45%, var(--border)); background: color-mix(in srgb, var(--good) 8%, var(--surface)); }
+.mastery-quiz > .btn { align-self: flex-start; }
+.mastery-quiz .prompt { font-size: 1.25rem; }
+.mastery-quiz .choices { grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.mastery-status { display: flex; align-items: center; gap: 14px; }
+.mastery-status > div { display: flex; flex-direction: column; gap: 2px; }
+.mastery-status strong { font-size: 1.1rem; font-weight: 900; }
+.mastery-score { font-size: 2rem !important; line-height: 1.1; }
+.mastery-progress { display: flex; justify-content: space-between; align-items: baseline; }
+.mastery-progress .score { font-weight: 800; }
+
 .wiki-pager { display: flex; justify-content: space-between; gap: 12px; margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--border); }
 .wiki-pager-link {
   display: flex;

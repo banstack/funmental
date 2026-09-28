@@ -8,6 +8,8 @@ interface Props<Q> {
   /** Once answered, inputs lock and the correct answer is revealed. */
   locked: boolean
   onSubmit: (correct: boolean) => void
+  /** Number keys pick choices. Off where the question is embedded in a longer page. */
+  keyboard?: boolean
 }
 
 export function QuestionView(props: Props<Question>) {
@@ -27,7 +29,7 @@ export function QuestionView(props: Props<Question>) {
   }
 }
 
-function ChoiceView({ q, locked, onSubmit }: Props<ChoiceQuestion>) {
+function ChoiceView({ q, locked, onSubmit, keyboard = true }: Props<ChoiceQuestion>) {
   const [chosen, setChosen] = useState<number | null>(null)
 
   const choose = (i: number) => {
@@ -37,7 +39,7 @@ function ChoiceView({ q, locked, onSubmit }: Props<ChoiceQuestion>) {
   }
 
   useEffect(() => {
-    if (locked) return
+    if (locked || !keyboard) return
     const onKey = (e: KeyboardEvent) => {
       const n = Number(e.key)
       if (n >= 1 && n <= q.choices.length) choose(n - 1)
@@ -56,7 +58,7 @@ function ChoiceView({ q, locked, onSubmit }: Props<ChoiceQuestion>) {
           else if (locked && i === chosen) state = 'wrong'
           return (
             <button key={i} className={`choice ${state}`} onClick={() => choose(i)} disabled={locked}>
-              <span className="key">{i + 1}</span>
+              {keyboard && <span className="key">{i + 1}</span>}
               <span>{c}</span>
             </button>
           )

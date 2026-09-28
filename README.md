@@ -15,7 +15,7 @@ npm run build
 - **Placement:** 8 adaptive questions set your starting tier. Each answer moves you up or down a step, and the steps shrink as the test goes on (`src/lib/leveling.ts`).
 - **Leveling:** every answer counts. Get 8 of your last 10 right at your tier to move up. Get 6 of your last 10 wrong and you drop a tier.
 - **Games:** Rapid Fire (60 seconds), Quiz (10 questions), and Puzzles (5 match, order, or fill-in-the-blank rounds).
-- **Learn:** a wiki-style study guide for each subject and grade, at `/learn/:subject/grade-N` or `/learn/:subject/college-N`. Each page has concept sections, worked examples, key formulas or vocabulary, and links to practice.
+- **Learn:** a wiki-style study guide for each subject and grade, at `/learn/:subject/grade-N` or `/learn/:subject/college-N`. Each page has concept sections, worked examples, key formulas or vocabulary, and links to practice. Each grade also has a 10-question mastery quiz (8 or more correct to master), which adds a green check in the sidebar. Mastery is a refresher, stored separately under `funmental:learn:v1` (`src/lib/mastery.ts`), and never affects training levels, stats or badges.
 - **Profile & badges:** `/profile` shows lifetime stats, per-subject progress from where you began to now, personal bests, and an activity calendar. Badges are defined in `src/lib/badges.ts`. Each one is a condition checked after every change, and it's awarded automatically (retroactively, for older saves) and never taken away. The first set is one "Starting Line" badge per subject, which records your first placement. Retaking placement changes your level but not where you began.
 - **Storage:** progress and sessions are saved in `localStorage` under `funmental:v1` (`src/lib/store.ts`).
 

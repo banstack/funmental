@@ -1,37 +1,91 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { streak } from '../lib/stats'
 import { useAppData } from '../lib/store'
 import { Avatar } from './Avatar'
 import { BadgeToaster } from './BadgeToaster'
 
+const LINKS = [
+  { to: '/', label: 'Dashboard', end: true },
+  { to: '/learn', label: 'Learn' },
+  { to: '/history', label: 'History' },
+]
+
 export function Layout() {
   const data = useAppData()
   const days = streak(data.activeDays)
   const { pathname } = useLocation()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const close = () => setMenuOpen(false)
 
   useEffect(() => {
     window.scrollTo(0, 0)
   }, [pathname])
 
+  useEffect(() => {
+    if (!menuOpen) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setMenuOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [menuOpen])
+
+  const profileChip = (
+    <NavLink to="/profile" className="profile-chip" aria-label={`Profile, ${days} day streak`} onClick={close}>
+      <Avatar name={data.profile.name} size="sm" />
+      <span className="streak">🔥 {days}</span>
+    </NavLink>
+  )
+
   return (
     <div className="app">
       <header className="topbar">
-        <NavLink to="/" className="logo">
+        <NavLink to="/" className="logo" onClick={close}>
           fun<span>mental</span>
         </NavLink>
-        <nav>
-          <NavLink to="/" end className="nav-home">
-            Dashboard
-          </NavLink>
-          <NavLink to="/learn">Learn</NavLink>
-          <NavLink to="/history">History</NavLink>
-          <NavLink to="/profile" className="profile-chip" aria-label={`Profile, ${days} day streak`}>
-            <Avatar name={data.profile.name} size="sm" />
-            <span className="streak">🔥 {days}</span>
-          </NavLink>
+        <nav className="nav-links" aria-label="Main">
+          {LINKS.map((l) => (
+            <NavLink key={l.to} to={l.to} end={l.end}>
+              {l.label}
+            </NavLink>
+          ))}
+          {profileChip}
         </nav>
+        {/* Small screens: profile chip stays visible, the rest moves into a menu. */}
+        <div className="nav-compact">
+          {profileChip}
+          <button
+            className="menu-btn"
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-menu"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+          >
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
+              {menuOpen ? (
+                <path d="M6 6l12 12M18 6L6 18" />
+              ) : (
+                <path d="M4 7h16M4 12h16M4 17h16" />
+              )}
+            </svg>
+          </button>
+        </div>
       </header>
+
+      {menuOpen && (
+        <>
+          <div className="mobile-menu-backdrop" onClick={close} aria-hidden />
+          <nav id="mobile-menu" className="mobile-menu" aria-label="Main">
+            {[...LINKS, { to: '/profile', label: 'Profile', end: false }].map((l) => (
+              <NavLink key={l.to} to={l.to} end={l.end} onClick={close}>
+                {l.label}
+              </NavLink>
+            ))}
+          </nav>
+        </>
+      )}
+
       <main className="main">
         <Outlet />
       </main>

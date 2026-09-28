@@ -84,6 +84,22 @@ export function useMastery(): MasteryData {
   )
 }
 
+export function getMastery(): MasteryData {
+  return data
+}
+
+export function subscribeMastery(listener: () => void) {
+  listeners.add(listener)
+  return () => {
+    listeners.delete(listener)
+  }
+}
+
+/** Replace local mastery with a merged copy from sync. */
+export function replaceMastery(next: MasteryData) {
+  commit(next)
+}
+
 export function recordQuizResult(subject: SubjectId, tier: number, score: number) {
   commit(applyQuizResult(data, subject, tier, score))
 }

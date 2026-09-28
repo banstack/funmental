@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { AccountPanel } from '../components/AccountPanel'
 import { ActivityHeatmap } from '../components/ActivityHeatmap'
 import { Avatar } from '../components/Avatar'
 import { BadgeButton, BadgeDetail } from '../components/BadgeCard'
@@ -103,6 +104,8 @@ export function Profile() {
         <h2>Activity</h2>
         <ActivityHeatmap sessions={data.sessions} />
       </section>
+
+      <AccountPanel />
     </div>
   )
 }

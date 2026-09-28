@@ -4,10 +4,19 @@ A brain gym for adults. Train math, reading and science from Grade 1 up to Colle
 
 ```bash
 npm install
-npm run dev     # http://localhost:5173
-npm test        # leveling, answer checking, and content validation
+npm run dev     # http://localhost:5173 (works on its own; progress stays in the browser)
+npm test        # leveling, answer checking, content validation, sync merging
 npm run build
 ```
+
+To try accounts and sync locally, you also need Postgres:
+
+```bash
+cp .env.example .env          # point DATABASE_URL at a local Postgres database
+npm run dev:server            # API on :3001; Vite proxies /api to it
+```
+
+Server integration tests run when a throwaway database is provided: `TEST_DATABASE_URL=postgres://... npm test`.
 
 ## How it works
 
@@ -17,7 +26,8 @@ npm run build
 - **Games:** Rapid Fire (60 seconds), Quiz (10 questions), and Puzzles (5 match, order, or fill-in-the-blank rounds).
 - **Learn:** a wiki-style study guide for each subject and grade, at `/learn/:subject/grade-N` or `/learn/:subject/college-N`. Each page has concept sections, worked examples, key formulas or vocabulary, and links to practice. Each grade also has a 10-question mastery quiz (8 or more correct to master), which adds a green check in the sidebar. Mastery is a refresher, stored separately under `funmental:learn:v1` (`src/lib/mastery.ts`), and never affects training levels, stats or badges.
 - **Profile & badges:** `/profile` shows lifetime stats, per-subject progress from where you began to now, personal bests, and an activity calendar. Badges are defined in `src/lib/badges.ts`. Each one is a condition checked after every change, and it's awarded automatically (retroactively, for older saves) and never taken away. The first set is one "Starting Line" badge per subject, which records your first placement. Retaking placement changes your level but not where you began.
-- **Storage:** progress and sessions are saved in `localStorage` under `funmental:v1` (`src/lib/store.ts`).
+- **Storage:** progress and sessions are saved in `localStorage` under `funmental:v1` (`src/lib/store.ts`). The app is local-first and needs no server.
+- **Accounts & sync (optional):** with the server running, the profile page offers email/password accounts. Signing in merges this browser's progress with the account (`src/lib/merge.ts`). After that, changes save in the background (`src/lib/sync.ts`). The server stores one JSON save per user, with a version number, so a device holding stale data gets a conflict and merges instead of overwriting. Progress from one account is never merged into a different account on a shared browser. Without a server (e.g. a static deploy) the account section is hidden.
 
 ## Adding content
 
@@ -30,3 +40,13 @@ npm run build
 - **Study guides** live in `src/content/lessons/`, with one `Lesson` per tier in each subject file. Reading and science pages pull their key vocabulary from the practice banks automatically.
 
 `npm test` checks that every subject, tier, and game mode produces valid questions.
+
+## Deploying to Railway
+
+One service runs `server/index.ts`, which serves the built app and the `/api` routes from the same origin. A second service is Railway Postgres.
+
+1. Create a project from this GitHub repo, and add a **PostgreSQL** database to it.
+2. On the app service, set `DATABASE_URL` to `${{Postgres.DATABASE_URL}}` (a reference variable) and `NODE_ENV=production`.
+3. Generate a public domain for the app service.
+
+`railway.json` sets the build (`npm run build`), start (`npm start`) and health check (`/api/health`). Tables are created automatically on startup. Node 24+ is required (see `engines` in `package.json`).

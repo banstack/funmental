@@ -1,0 +1,208 @@
+import express, { type NextFunction, type Request, type Response } from 'express'
+import { existsSync } from 'node:fs'
+import path from 'node:path'
+import {
+  createSession,
+  deleteSession,
+  hashPassword,
+  MAX_PASSWORD,
+  MIN_PASSWORD,
+  normalizeEmail,
+  rateLimiter,
+  SESSION_DAYS,
+  userForSession,
+  verifyPassword,
+  type SessionUser,
+} from './auth.ts'
+import type { Db } from './db.ts'
+
+const COOKIE = 'fm_session'
+const MAX_SAVE_BYTES = '2mb'
+
+interface Options {
+  db: Db
+  /** Serve the built frontend from this directory, if it exists. */
+  staticDir?: string
+  /** Mark cookies Secure (true behind HTTPS in production). */
+  secureCookies?: boolean
+  /** Auth attempts allowed per IP per 15 minutes. */
+  authLimit?: number
+}
+
+type AuthedRequest = Request & { user?: SessionUser }
+
+function readCookie(req: Request, name: string): string | undefined {
+  const header = req.headers.cookie
+  if (!header) return undefined
+  for (const part of header.split(';')) {
+    const [k, ...v] = part.trim().split('=')
+    if (k === name) return decodeURIComponent(v.join('='))
+  }
+  return undefined
+}
+
+export function createApp({ db, staticDir, secureCookies = false, authLimit = 20 }: Options) {
+  const app = express()
+  app.disable('x-powered-by')
+  app.set('trust proxy', 1) // Railway terminates TLS in front of us.
+
+  const authAttempt = rateLimiter(authLimit, 15 * 60 * 1000)
+
+  const setSessionCookie = (res: Response, token: string) =>
+    res.cookie(COOKIE, token, {
+      httpOnly: true,
+      secure: secureCookies,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: SESSION_DAYS * 24 * 60 * 60 * 1000,
+    })
+
+  const api = express.Router()
+  api.use(express.json({ limit: MAX_SAVE_BYTES }))
+
+  // Mutating requests must be JSON. Browsers can't send that cross-site without
+  // a CORS preflight, which we never allow, so this doubles as CSRF protection.
+  api.use((req, res, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD' && !req.is('application/json')) {
+      res.status(415).json({ error: 'Expected application/json' })
+      return
+    }
+    next()
+  })
+
+  const requireUser = async (req: AuthedRequest, res: Response, next: NextFunction) => {
+    const user = await userForSession(db, readCookie(req, COOKIE))
+    if (!user) {
+      res.status(401).json({ error: 'Not signed in' })
+      return
+    }
+    req.user = user
+    next()
+  }
+
+  api.get('/health', (_req, res) => {
+    res.json({ ok: true })
+  })
+
+  api.post('/auth/signup', async (req, res) => {
+    if (!authAttempt(req.ip ?? 'unknown')) {
+      res.status(429).json({ error: 'Too many attempts. Try again in a few minutes.' })
+      return
+    }
+    const email = normalizeEmail(req.body?.email)
+    const password = req.body?.password
+    if (!email) {
+      res.status(400).json({ error: 'Enter a valid email address.' })
+      return
+    }
+    if (typeof password !== 'string' || password.length < MIN_PASSWORD || password.length > MAX_PASSWORD) {
+      res.status(400).json({ error: `Password must be at least ${MIN_PASSWORD} characters.` })
+      return
+    }
+    const { rows } = await db.query<{ id: string }>(
+      `INSERT INTO users (email, password_hash) VALUES ($1, $2) ON CONFLICT (email) DO NOTHING RETURNING id`,
+      [email, await hashPassword(password)],
+    )
+    if (!rows[0]) {
+      res.status(409).json({ error: 'An account with that email already exists. Try logging in.' })
+      return
+    }
+    setSessionCookie(res, await createSession(db, rows[0].id))
+    res.status(201).json({ user: { id: rows[0].id, email } })
+  })
+
+  api.post('/auth/login', async (req, res) => {
+    if (!authAttempt(req.ip ?? 'unknown')) {
+      res.status(429).json({ error: 'Too many attempts. Try again in a few minutes.' })
+      return
+    }
+    const email = normalizeEmail(req.body?.email)
+    const password = req.body?.password
+    const { rows } = email
+      ? await db.query<{ id: string; password_hash: string }>('SELECT id, password_hash FROM users WHERE email = $1', [email])
+      : { rows: [] }
+    const ok = rows[0] && typeof password === 'string' && password.length <= MAX_PASSWORD && (await verifyPassword(password, rows[0].password_hash))
+    if (!ok) {
+      res.status(401).json({ error: 'Incorrect email or password.' })
+      return
+    }
+    setSessionCookie(res, await createSession(db, rows[0].id))
+    res.json({ user: { id: rows[0].id, email } })
+  })
+
+  api.post('/auth/logout', async (req, res) => {
+    await deleteSession(db, readCookie(req, COOKIE))
+    res.clearCookie(COOKIE, { path: '/' })
+    res.json({ ok: true })
+  })
+
+  api.get('/me', requireUser, (req: AuthedRequest, res) => {
+    res.json({ user: req.user })
+  })
+
+  api.get('/save', requireUser, async (req: AuthedRequest, res) => {
+    const { rows } = await db.query('SELECT training, learn, version, updated_at FROM saves WHERE user_id = $1', [req.user!.id])
+    const row = rows[0]
+    res.json(row ? { training: row.training, learn: row.learn, version: row.version, updatedAt: row.updated_at } : { training: null, learn: null, version: 0, updatedAt: null })
+  })
+
+  /**
+   * Replace the save if the client's baseVersion matches the stored version.
+   * On mismatch, return 409 with the current save so the client can merge and retry.
+   */
+  api.put('/save', requireUser, async (req: AuthedRequest, res) => {
+    const { training, learn, baseVersion } = req.body ?? {}
+    const isObj = (v: unknown) => v === null || (typeof v === 'object' && !Array.isArray(v))
+    if (!isObj(training) || !isObj(learn) || !Number.isInteger(baseVersion)) {
+      res.status(400).json({ error: 'Expected { training, learn, baseVersion }' })
+      return
+    }
+    const userId = req.user!.id
+    // baseVersion 0 means "no save yet": only insert. Otherwise only update the exact version we merged from.
+    const { rows } =
+      baseVersion === 0
+        ? await db.query(
+            `INSERT INTO saves (user_id, training, learn, version) VALUES ($1, $2, $3, 1)
+             ON CONFLICT (user_id) DO NOTHING RETURNING version, updated_at`,
+            [userId, training, learn],
+          )
+        : await db.query(
+            `UPDATE saves SET training = $2, learn = $3, version = version + 1, updated_at = now()
+             WHERE user_id = $1 AND version = $4 RETURNING version, updated_at`,
+            [userId, training, learn, baseVersion],
+          )
+    if (rows[0]) {
+      res.json({ version: rows[0].version, updatedAt: rows[0].updated_at })
+      return
+    }
+    const current = await db.query('SELECT training, learn, version, updated_at FROM saves WHERE user_id = $1', [userId])
+    const row = current.rows[0]
+    res.status(409).json(
+      row ? { training: row.training, learn: row.learn, version: row.version, updatedAt: row.updated_at } : { training: null, learn: null, version: 0, updatedAt: null },
+    )
+  })
+
+  app.use('/api', api)
+  app.use('/api', (_req, res) => {
+    res.status(404).json({ error: 'Not found' })
+  })
+
+  if (staticDir && existsSync(staticDir)) {
+    app.use(express.static(staticDir, { index: 'index.html', maxAge: '1h' }))
+    // Hash routing means only "/" is ever requested, but fall back for safety.
+    app.get(/^(?!\/api\/).*/, (_req, res) => {
+      res.sendFile(path.join(staticDir, 'index.html'))
+    })
+  }
+
+  app.use((err: Error & { type?: string }, _req: Request, res: Response, _next: NextFunction) => {
+    if (err.type === 'entity.too.large') {
+      res.status(413).json({ error: 'Save is too large.' })
+      return
+    }
+    console.error(err)
+    res.status(500).json({ error: 'Something went wrong.' })
+  })
+
+  return app
+}

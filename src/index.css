@@ -609,6 +609,30 @@ button { font: inherit; color: inherit; }
 
 .wiki-practice > .btn { align-self: flex-start; }
 
+/* Account & sync (profile) */
+.account-signed-in { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; }
+.account-signed-in p + p { margin-top: 4px; }
+.sync-status { display: inline-flex; align-items: center; gap: 8px; color: var(--muted); font-size: 0.9rem; }
+.sync-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); }
+.sync-status.synced .sync-dot { background: var(--good); }
+.sync-status.syncing .sync-dot { background: var(--brand); animation: pulse 1s infinite; }
+.sync-status.error { color: var(--bad); }
+.sync-status.error .sync-dot { background: var(--bad); }
+.auth-form { display: flex; flex-direction: column; gap: 14px; max-width: 520px; }
+.auth-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+.auth-fields label { display: flex; flex-direction: column; gap: 6px; font-weight: 700; font-size: 0.9rem; }
+.auth-fields input {
+  font: inherit;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+}
+.auth-fields input:focus { border-color: var(--brand); }
+.auth-error { color: var(--bad); font-weight: 700; }
+
 /* Grade mastery (Learn only) */
 .mastered-check {
   display: inline-grid;

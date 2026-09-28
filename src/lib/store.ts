@@ -59,6 +59,14 @@ export function getData(): AppData {
   return data
 }
 
+/** Notified after every change; used by cloud sync. */
+export const subscribeAppData = subscribe
+
+/** Replace local data with a merged copy from sync. Badges earned by the merge aren't announced. */
+export function replaceAppData(next: AppData) {
+  commit(next, { announce: false })
+}
+
 export function useBadgeToasts(): string[] {
   return useSyncExternalStore(
     (l) => {

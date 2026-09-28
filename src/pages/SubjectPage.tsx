@@ -3,7 +3,7 @@ import { SessionList } from '../components/SessionList'
 import { TierTrack } from '../components/TierTrack'
 import { mastery, PROMOTE_AT } from '../lib/leveling'
 import { useAppData } from '../lib/store'
-import { isSubject, MODES, subjectMeta } from '../lib/subjects'
+import { isSubject, learnPath, MODES, subjectMeta } from '../lib/subjects'
 import { bandOf, MAX_TIER, tierLabel } from '../lib/tiers'
 
 const MODE_ICONS = { rapid: '⚡', quiz: '✎', puzzle: '⧉' }
@@ -32,6 +32,9 @@ export function SubjectPage() {
             <h1>{tierLabel(p.tier)}</h1>
             <p className="muted">{bandOf(p.tier).name}</p>
           </div>
+          <Link to={learnPath(subject, p.tier)} className="btn ghost study-link">
+            📖 {tierLabel(p.tier)} study guide
+          </Link>
         </div>
         <TierTrack tier={p.tier} bestTier={p.bestTier} />
         <div className="mastery">

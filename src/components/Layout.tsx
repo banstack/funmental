@@ -1,9 +1,15 @@
-import { NavLink, Outlet } from 'react-router-dom'
+import { useEffect } from 'react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { streak, useAppData } from '../lib/store'
 
 export function Layout() {
   const data = useAppData()
   const days = streak(data.activeDays)
+  const { pathname } = useLocation()
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
 
   return (
     <div className="app">
@@ -15,6 +21,7 @@ export function Layout() {
           <NavLink to="/" end>
             Dashboard
           </NavLink>
+          <NavLink to="/learn">Learn</NavLink>
           <NavLink to="/history">History</NavLink>
           <span className="streak" title="Daily streak">
             🔥 {days}

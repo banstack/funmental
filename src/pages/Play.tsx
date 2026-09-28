@@ -3,7 +3,7 @@ import { Link, Navigate, useParams } from 'react-router-dom'
 import { QuestionView } from '../components/QuestionView'
 import { nextQuestion } from '../content'
 import { addSession, getData, recordAnswer, useAppData } from '../lib/store'
-import { isMode, isSubject, modeMeta, subjectMeta } from '../lib/subjects'
+import { isMode, isSubject, learnPath, modeMeta, subjectMeta } from '../lib/subjects'
 import { tierLabel } from '../lib/tiers'
 import type { Mode, Question, SubjectId } from '../types'
 
@@ -178,6 +178,9 @@ function Game({ subject, mode }: { subject: SubjectId; mode: Mode }) {
           <button className="btn primary big" onClick={start}>
             Play again
           </button>
+          <Link className="btn ghost" to={learnPath(subject, tierEnd)}>
+            📖 Review {tierLabel(tierEnd)} guide
+          </Link>
           <Link className="btn ghost" to={`/subject/${subject}`}>
             Back to {sMeta.name}
           </Link>

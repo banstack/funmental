@@ -15,6 +15,7 @@ npm run build
 - **Placement:** 8 adaptive questions set your starting tier. Each answer moves you up or down a step, and the steps shrink as the test goes on (`src/lib/leveling.ts`).
 - **Leveling:** every answer counts. Get 8 of your last 10 right at your tier to move up. Get 6 of your last 10 wrong and you drop a tier.
 - **Games:** Rapid Fire (60 seconds), Quiz (10 questions), and Puzzles (5 match, order, or fill-in-the-blank rounds).
+- **Learn:** a wiki-style study guide for each subject and grade, at `/learn/:subject/grade-N` or `/learn/:subject/college-N`. Each page has concept sections, worked examples, key formulas or vocabulary, and links to practice.
 - **Storage:** progress and sessions are saved in `localStorage` under `funmental:v1` (`src/lib/store.ts`).
 
 ## Adding content
@@ -25,5 +26,6 @@ npm run build
   - `terms`: vocabulary, used for definition questions and match puzzles
   - `orders`: sequencing puzzles
   - `cloze`: fill-in-the-blank sentences
+- **Study guides** live in `src/content/lessons/`, with one `Lesson` per tier in each subject file. Reading and science pages pull their key vocabulary from the practice banks automatically.
 
 `npm test` checks that every subject, tier, and game mode produces valid questions.

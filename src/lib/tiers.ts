@@ -29,3 +29,16 @@ export function tierLabel(tier: number): string {
 export function tierShort(tier: number): string {
   return tier >= 12 ? `C${tier - 11}` : String(tier + 1)
 }
+
+/** URL-friendly tier name, e.g. "grade-3" or "college-2". */
+export function tierSlug(tier: number): string {
+  return tier >= 12 ? `college-${tier - 11}` : `grade-${tier + 1}`
+}
+
+export function parseTierSlug(s: string | undefined): number | null {
+  const m = s?.match(/^(grade|college)-(\d+)$/)
+  if (!m) return null
+  const n = Number(m[2])
+  if (m[1] === 'grade') return n >= 1 && n <= 12 ? n - 1 : null
+  return n >= 1 && n <= 3 ? n + 11 : null
+}

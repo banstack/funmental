@@ -1,4 +1,5 @@
 import type { Mode, SubjectId } from '../types'
+import { tierSlug } from './tiers'
 
 export interface SubjectMeta {
   id: SubjectId
@@ -35,3 +36,5 @@ export const MODES: ModeMeta[] = [
 export const modeMeta = (id: Mode) => MODES.find((m) => m.id === id)!
 
 export const isMode = (s: string | undefined): s is Mode => MODES.some((m) => m.id === s)
+
+export const learnPath = (subject: SubjectId, tier: number) => `/learn/${subject}/${tierSlug(tier)}`

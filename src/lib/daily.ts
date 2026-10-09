@@ -1,3 +1,4 @@
+import { picturePool, type PictureKind } from '../content/pictures'
 import { ask, pool, type AskedQuestion } from '../content/questions'
 import type { Difficulty } from '../content/topics/types'
 import { addDays, dateKey, daysBetween } from './dates'
@@ -23,31 +24,37 @@ export const dailyDate = (n: number) => addDays(EPOCH, n - 1)
 export const dailyTopic = (n: number): TopicId => TOPICS[(((n - 1) % TOPICS.length) + TOPICS.length) % TOPICS.length].id
 
 /**
- * The seven questions for dive `n`, the same on every device. Each topic's
- * questions are dealt from a fixed shuffled deck per difficulty, so a topic
- * doesn't repeat a question until it has used every one at that difficulty.
+ * Geography days swap two of their questions for pictures: a flag at question 3
+ * and a country outline at question 5.
+ */
+export const GEOGRAPHY_PICTURES: Partial<Record<number, PictureKind>> = { 2: 'flag', 4: 'outline' }
+
+/**
+ * The seven questions for launch `n`, the same on every device. Everyone gets
+ * the same topic each day, and each topic's questions are dealt from a fixed
+ * shuffled deck per difficulty (and per picture kind), so a topic doesn't
+ * repeat a question until it has used every one in that deck.
  */
 export function dailyQuestions(n: number): AskedQuestion[] {
   const topic = dailyTopic(n)
   const turn = Math.floor((n - 1) / TOPICS.length) // how many times this topic has come up before
-  const needed = new Map<Difficulty, number>()
-  for (const d of DAILY_DIFFICULTY) needed.set(d, (needed.get(d) ?? 0) + 1)
+  const slots = DAILY_DIFFICULTY.map((difficulty, i) => {
+    const kind = topic === 'geography' ? GEOGRAPHY_PICTURES[i] : undefined
+    return { difficulty, kind, deck: kind ? `deck:${kind}:${difficulty}` : `deck:${topic}:${difficulty}` }
+  })
+  const needed = new Map<string, number>()
+  for (const s of slots) needed.set(s.deck, (needed.get(s.deck) ?? 0) + 1)
 
-  const picked = new Map<Difficulty, AskedQuestion['question'][]>()
-  for (const [d, count] of needed) {
-    const bank = pool(topic, d)
-    const out = []
-    for (let i = 0; i < count; i++) {
-      const slot = turn * count + i
-      const round = Math.floor(slot / bank.length)
-      const deck = shuffle(bank, seeded(`deck:${topic}:${d}:${round}`))
-      out.push(deck[slot % bank.length])
-    }
-    picked.set(d, out)
-  }
-
+  const dealt = new Map<string, number>()
   const rand = seeded(`daily:${n}`)
-  return DAILY_DIFFICULTY.map((d) => ask(picked.get(d)!.shift()!, rand))
+  return slots.map(({ difficulty, kind, deck }) => {
+    const bank = kind ? picturePool(kind, difficulty) : pool(topic, difficulty)
+    const i = dealt.get(deck) ?? 0
+    dealt.set(deck, i + 1)
+    const slot = turn * needed.get(deck)! + i
+    const round = Math.floor(slot / bank.length)
+    return ask(shuffle(bank, seeded(`${deck}:${round}`))[slot % bank.length], rand)
+  })
 }
 
 /** Each right answer climbs one milestone, so seven reach the Galactic Center. */

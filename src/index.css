@@ -312,6 +312,10 @@ button { font: inherit; color: inherit; }
 .fuel span { display: block; height: 100%; background: var(--flare); border-radius: inherit; transition: width 0.1s linear; }
 .fuel.low span { background: var(--bad); animation: pulse 0.6s infinite; }
 .prompt { font-family: var(--f-display); font-weight: 600; font-size: clamp(1.25rem, 3.8vw, 1.55rem); line-height: 1.25; letter-spacing: -0.01em; }
+/* Flags sit on a hairline so white stripes don't melt into the card; outlines are drawn in --ink. */
+.picture { display: block; align-self: center; max-width: 100%; user-select: none; }
+.picture.flag { height: clamp(110px, 28vw, 160px); border-radius: 6px; box-shadow: 0 0 0 1px rgb(16 26 43 / 0.15); }
+.picture.outline { height: clamp(150px, 40vw, 220px); width: 100%; object-fit: contain; }
 .choices { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 @media (max-width: 520px) { .choices { grid-template-columns: 1fr; } }
 .choice {
@@ -361,6 +365,8 @@ button { font: inherit; color: inherit; }
 .review { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; width: 100%; }
 .review li { display: flex; gap: 12px; padding: 12px 14px; border-radius: 12px; background: var(--raised); }
 .review li p + p { margin-top: 2px; }
+.review-picture { flex: none; height: 36px; width: 48px; object-fit: contain; border-radius: 6px; background: var(--chalk); }
+.review-picture.outline { padding: 3px; }
 .review-mark { flex: none; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; font-weight: 700; }
 .review li.good .review-mark { background: var(--good-bg); color: var(--good); }
 .review li.bad .review-mark { background: var(--bad-bg); color: var(--bad); }

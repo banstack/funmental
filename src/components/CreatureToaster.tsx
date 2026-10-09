@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import { CreatureIcon } from './Icons'
 import { creatureById } from '../lib/creatures'
 import { play } from '../lib/sound'
 import { dismissCreatureToast, useCreatureToasts } from '../lib/store'
@@ -22,9 +23,7 @@ export function CreatureToaster() {
   if (!creature) return null
   return (
     <div className="toast" role="status">
-      <span className="toast-emoji" aria-hidden>
-        {creature.emoji}
-      </span>
+      <CreatureIcon id={creature.id} size={48} />
       <div className="toast-body">
         <span className="eyebrow">New sighting</span>
         <strong>{creature.name}</strong>

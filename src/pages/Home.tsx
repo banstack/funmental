@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { DepthLadder } from '../components/DepthCharts'
+import { FlameIcon, TopicIcon } from '../components/Icons'
 import { DAILY_LENGTH, DAILY_ZONE, dailyNumber, dailyTopic, shareText } from '../lib/daily'
-import { dailyStreak } from '../lib/creatures'
-import { dateKey, untilMidnight } from '../lib/dates'
+import { CREATURES, dailyStreak } from '../lib/creatures'
+import { dateKey, fromKey, untilMidnight } from '../lib/dates'
 import { MAX_DEPTH, ZONES, formatDepth, zoneAt } from '../lib/ocean'
 import { shareResult } from '../lib/share'
 import { useAppData } from '../lib/store'
@@ -37,67 +39,73 @@ export function Home() {
     setShared(r === 'copied' ? 'Copied!' : r === 'shared' ? 'Shared!' : "Couldn't copy")
   }
 
+  const weekday = fromKey(today).toLocaleDateString(undefined, { weekday: 'long' })
+  const dives = Object.values(data.daily).filter((r) => r.finishedAt !== null).length
+  const spotted = Object.keys(data.creatures).length
+
   return (
     <div className="page home">
-      <section className="hero">
-        <span className="eyebrow">Fathom #{n}</span>
-        <h1>
-          Today's dive: <span className="topic-name">{topic.emoji} {topic.name}</span>
-        </h1>
-        {!done ? (
-          <>
-            <p className="lead">
-              {DAILY_LENGTH} questions, 20 seconds each. Every right answer takes you deeper. Get them all to reach the bottom of the Challenger
-              Deep, {formatDepth(MAX_DEPTH)} down.
-            </p>
-            <Link to="/daily" className="btn primary big">
-              {result && result.answers.length > 0 ? `Continue dive (${result.answers.length}/${DAILY_LENGTH})` : 'Dive'}
-            </Link>
-          </>
-        ) : (
-          <>
-            <div className="hero-result">
-              <span className="results-depth">{formatDepth(result.depth)}</span>
-              <span className="muted">
-                {result.depth >= MAX_DEPTH ? 'Challenger Deep!' : result.depth > 0 ? zoneAt(result.depth).name : 'Surface'} · {result.answers.filter(Boolean).length}/7
-              </span>
-            </div>
-            <div className="squares">
-              {result.answers.map((ok, i) => (
-                <span key={i} className={`square ${ok ? `z-${ZONES[DAILY_ZONE[i]].id}` : 'miss'}`} />
-              ))}
-            </div>
-            <div className="row">
-              <button className="btn primary" onClick={share}>
-                {shared ?? 'Share result'}
-              </button>
-              <Link to="/daily" className="btn ghost">
-                Review answers
+      <section className="today">
+        <div className="today-head">
+          <span className="eyebrow">
+            Fathom #{n} · {weekday}
+          </span>
+          <h1 className="topic-title">
+            <TopicIcon topic={topic.id} size={30} />
+            {topic.name}
+          </h1>
+          {!done ? (
+            <>
+              <p className="lead">
+                {DAILY_LENGTH} questions, 20 seconds each. Every right answer takes you deeper. Get them all to reach the bottom of the Challenger Deep.
+              </p>
+              <Link to="/daily" className="btn primary big">
+                {result && result.answers.length > 0 ? `Continue dive (${result.answers.length}/${DAILY_LENGTH})` : 'Dive'}
               </Link>
-            </div>
-            <p className="muted">Next dive in {countdown}.</p>
-          </>
-        )}
+            </>
+          ) : (
+            <>
+              <div className="hero-result">
+                <span className="results-depth">{formatDepth(result.depth)}</span>
+                <span>
+                  {result.depth >= MAX_DEPTH ? 'Challenger Deep!' : result.depth > 0 ? zoneAt(result.depth).name : 'Surface'} · {result.answers.filter(Boolean).length} of 7 right
+                </span>
+              </div>
+              <div className="squares">
+                {result.answers.map((ok, i) => (
+                  <span key={i} className={`square ${ok ? `z-${ZONES[DAILY_ZONE[i]].id}` : 'miss'}`} />
+                ))}
+              </div>
+              <div className="row">
+                <button className="btn primary" onClick={share}>
+                  {shared ?? 'Share result'}
+                </button>
+                <Link to="/daily" className="btn ghost">
+                  Review answers
+                </Link>
+              </div>
+              <p className="small">Next dive in {countdown}.</p>
+            </>
+          )}
+        </div>
+        <DepthLadder depth={result ? result.depth : undefined} />
       </section>
 
-      <section className="stats-row">
-        <div className="stat">
-          <strong>🔥 {streak}</strong>
-          <span className="muted small">day streak</span>
-        </div>
-        <div className="stat">
-          <strong>{Object.values(data.daily).filter((r) => r.finishedAt !== null).length}</strong>
-          <span className="muted small">dives</span>
-        </div>
-        <div className="stat">
-          <strong>{Object.keys(data.creatures).length}</strong>
-          <span className="muted small">creatures</span>
-        </div>
-      </section>
+      <p className="home-stats">
+        <span>
+          <FlameIcon /> {streak}-day streak
+        </span>
+        <span>
+          {dives} {dives === 1 ? 'dive' : 'dives'}
+        </span>
+        <span>
+          {spotted} of {CREATURES.length} creatures
+        </span>
+      </p>
 
       <section className={`panel practice-card ${unlocked ? '' : 'locked'}`}>
         <div>
-          <span className="eyebrow">{unlocked ? 'Practice' : '🔒 Practice'}</span>
+          <span className="eyebrow">{unlocked ? 'Practice' : 'Full game'}</span>
           <h2>Want to keep diving?</h2>
           <p className="muted">
             Unlimited dives in any of 8 topics, with oxygen tanks and streak boosts, plus every past Daily Dive to replay.

@@ -4,6 +4,7 @@ import { dailyStreak } from '../lib/creatures'
 import { useAppData } from '../lib/store'
 import { Avatar } from './Avatar'
 import { CreatureToaster } from './CreatureToaster'
+import { FlameIcon } from './Icons'
 
 const LINKS = [
   { to: '/', label: 'Today', end: true },
@@ -33,7 +34,9 @@ export function Layout() {
   const profileChip = (
     <NavLink to="/logbook" className="profile-chip" aria-label={`Logbook, ${days} day streak`} onClick={close}>
       <Avatar name={data.profile.name} size="sm" />
-      <span className="streak">🔥 {days}</span>
+      <span className="streak">
+        <FlameIcon size={15} /> {days}
+      </span>
     </NavLink>
   )
 
@@ -41,7 +44,7 @@ export function Layout() {
     <div className="app">
       <header className="topbar">
         <NavLink to="/" className="logo" onClick={close}>
-          fath<span>om</span>
+          fathom
         </NavLink>
         <nav className="nav-links" aria-label="Main">
           {LINKS.map((l) => (

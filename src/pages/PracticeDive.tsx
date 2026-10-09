@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { DiveFrame, OxygenTanks } from '../components/DiveHud'
+import { TopicIcon } from '../components/Icons'
 import { Round } from '../components/Round'
 import type { AskedQuestion } from '../content/questions'
 import { DIFFICULTY_NAMES, MAX_DEPTH, ZONES, formatDepth, zoneAt } from '../lib/ocean'
@@ -88,8 +89,8 @@ function Dive({ topic, onAgain }: { topic: PracticeTopic; onAgain: () => void })
     const s = stateRef.current
     return (
       <div className="page narrow results">
-        <span className="eyebrow">
-          Practice · {meta.emoji} {meta.name}
+        <span className="eyebrow with-icon">
+          <TopicIcon topic={topic} size={16} /> Practice · {meta.name}
         </span>
         <div className="results-depth">{formatDepth(s.depth)}</div>
         <p className="lead">

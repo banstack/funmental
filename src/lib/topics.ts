@@ -3,24 +3,23 @@ export type TopicId = 'general' | 'science' | 'history' | 'geography' | 'screen'
 export interface TopicMeta {
   id: TopicId
   name: string
-  emoji: string
 }
 
 /** Also the order the Daily Dive rotates through, one topic per day. */
 export const TOPICS: TopicMeta[] = [
-  { id: 'general', name: 'General Knowledge', emoji: '🧠' },
-  { id: 'history', name: 'History', emoji: '🏛️' },
-  { id: 'science', name: 'Science & Nature', emoji: '🔬' },
-  { id: 'screen', name: 'Movies & TV', emoji: '🎬' },
-  { id: 'geography', name: 'Geography', emoji: '🌍' },
-  { id: 'music', name: 'Music', emoji: '🎵' },
-  { id: 'sports', name: 'Sports', emoji: '🏅' },
-  { id: 'food', name: 'Food & Drink', emoji: '🍜' },
+  { id: 'general', name: 'General Knowledge' },
+  { id: 'history', name: 'History' },
+  { id: 'science', name: 'Science & Nature' },
+  { id: 'screen', name: 'Movies & TV' },
+  { id: 'geography', name: 'Geography' },
+  { id: 'music', name: 'Music' },
+  { id: 'sports', name: 'Sports' },
+  { id: 'food', name: 'Food & Drink' },
 ]
 
 export type PracticeTopic = TopicId | 'mixed'
 
-export const MIXED = { id: 'mixed' as const, name: 'Mixed', emoji: '🎲' }
+export const MIXED = { id: 'mixed' as const, name: 'Mixed' }
 
 export const topicMeta = (id: PracticeTopic) => (id === 'mixed' ? MIXED : TOPICS.find((t) => t.id === id)!)
 

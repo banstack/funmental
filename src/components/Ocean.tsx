@@ -1,27 +1,25 @@
 import { CREATURES } from '../lib/creatures'
-import { MAX_DEPTH, ZONES, formatDepth, waterColor, zoneAt } from '../lib/ocean'
+import { ZONES, depthScale, formatDepth, zoneAt } from '../lib/ocean'
+import { CreatureIcon } from './Icons'
 
-/** The water behind a dive: its color darkens with depth, and the zone's creatures drift past. */
+/** The water behind a dive: one flat color per zone, stepping down as you descend, with the zone's creatures drifting past. */
 export function Ocean({ depth }: { depth: number }) {
   const zone = zoneAt(depth)
-  const drifters = CREATURES.filter((c) => c.zone === zone.id)
+  const drifters = CREATURES.filter((c) => c.zone === zone.id && c.id !== 'challenger')
   return (
-    <div className={`ocean zone-${zone.id}`} style={{ background: waterColor(depth) }} aria-hidden>
-      {zone.id === 'sunlight' && <div className="rays" />}
-      <div className="snow" />
+    <div className={`ocean zone-${zone.id}`} style={{ background: zone.color }} aria-hidden>
       {drifters.map((c, i) => (
-        <span key={c.id} className="drifter" style={{ top: `${18 + i * 26}%`, animationDelay: `${-i * 7}s`, animationDuration: `${22 + i * 6}s` }}>
-          {c.emoji}
+        <span key={c.id} className="drifter" style={{ top: `${18 + i * 26}%`, animationDelay: `${-i * 7}s`, animationDuration: `${26 + i * 6}s` }}>
+          <CreatureIcon id={c.id} size={56} />
         </span>
       ))}
     </div>
   )
 }
 
-/** Gauge position for a depth, on a square-root scale so the shallow zones aren't slivers. */
-const gaugePos = (m: number) => Math.sqrt(Math.min(1, m / MAX_DEPTH)) * 100
+const gaugePos = (m: number) => depthScale(m) * 100
 
-/** Vertical depth gauge with the zone bands marked. */
+/** Vertical depth gauge: the zones as flat bands, with a marker at your depth. */
 export function DepthGauge({ depth }: { depth: number }) {
   return (
     <div className="gauge" role="img" aria-label={`Depth ${formatDepth(depth)}, ${zoneAt(depth).name}`}>
@@ -29,7 +27,7 @@ export function DepthGauge({ depth }: { depth: number }) {
         <span
           key={z.id}
           className="gauge-band"
-          style={{ top: `${gaugePos(z.top)}%`, height: `${gaugePos(z.bottom) - gaugePos(z.top)}%`, background: z.colors[1] }}
+          style={{ top: `${gaugePos(z.top)}%`, height: `${gaugePos(z.bottom) - gaugePos(z.top)}%`, background: z.color }}
           title={z.name}
         />
       ))}

@@ -12,7 +12,7 @@ export function Unlock() {
   if (unlocked) {
     return (
       <div className="page narrow">
-        <h1>You have the full game 🎉</h1>
+        <h1>You have the full game</h1>
         <p className="lead">Practice is unlocked. Dive as much as you like.</p>
         <Link to="/practice" className="btn primary">
           Go to Practice

@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react'
 import { DAILY_DEPTHS, DAILY_ZONE, dailyDepth, dailyQuestions, shareText } from '../lib/daily'
 import { ZONES, formatDepth, zoneAt } from '../lib/ocean'
+import { DiveProfile } from './DepthCharts'
+import { TopicIcon } from './Icons'
 import { shareResult } from '../lib/share'
 import { topicMeta, type TopicId } from '../lib/topics'
 
@@ -19,8 +21,8 @@ export function DailyResults({ n, topic, answers, children }: { n: number; topic
 
   return (
     <div className="results">
-      <span className="eyebrow">
-        Fathom #{n} · {meta.emoji} {meta.name}
+      <span className="eyebrow with-icon">
+        <TopicIcon topic={topic} size={16} /> Fathom #{n} · {meta.name}
       </span>
       <div className="results-depth">{formatDepth(depth)}</div>
       <p className="lead">
@@ -32,6 +34,7 @@ export function DailyResults({ n, topic, answers, children }: { n: number; topic
           <span key={i} className={`square ${ok ? `z-${ZONES[DAILY_ZONE[i]].id}` : 'miss'}`} />
         ))}
       </div>
+      <DiveProfile answers={answers} />
       <div className="row">
         <button className="btn primary" onClick={share}>
           {shared ?? 'Share result'}

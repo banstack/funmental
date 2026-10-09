@@ -1,4 +1,5 @@
 import { Link, Navigate } from 'react-router-dom'
+import { TopicIcon } from '../components/Icons'
 import { dailyDate, dailyNumber, dailyTopic } from '../lib/daily'
 import { MAX_DEPTH, formatDepth } from '../lib/ocean'
 import { useAppData } from '../lib/store'
@@ -27,9 +28,7 @@ export function Practice() {
       <div className="topic-grid">
         {[MIXED, ...TOPICS].map((t) => (
           <Link key={t.id} to={`/practice/${t.id}`} className="topic-card">
-            <span className="topic-emoji" aria-hidden>
-              {t.emoji}
-            </span>
+            <TopicIcon topic={t.id} size={28} />
             <strong>{t.name}</strong>
             <span className="muted small">{best(t.id) > 0 ? `Best ${formatDepth(best(t.id))}` : 'Not dived yet'}</span>
           </Link>
@@ -48,7 +47,7 @@ export function Practice() {
               <li key={n}>
                 <Link to={`/archive/${n}`}>
                   <span>
-                    #{n} · {meta.emoji} {meta.name}
+                    <TopicIcon topic={meta.id} size={18} /> #{n} · {meta.name}
                   </span>
                   <span className="muted small">{mine?.finishedAt ? formatDepth(mine.depth) : 'Missed'}</span>
                 </Link>

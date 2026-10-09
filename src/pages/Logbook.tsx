@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { AccountPanel } from '../components/AccountPanel'
 import { Avatar } from '../components/Avatar'
+import { CreatureIcon, TopicIcon } from '../components/Icons'
 import { CREATURES, dailyStreak, longestDailyStreak } from '../lib/creatures'
 import { addDays, dateKey, fromKey } from '../lib/dates'
 import { MAX_DEPTH, ZONES, formatDepth, zoneAt } from '../lib/ocean'
@@ -18,7 +19,7 @@ export function Logbook() {
   const spotted = CREATURES.filter((c) => data.creatures[c.id]).length
 
   const tiles = [
-    { label: 'day streak', value: `🔥 ${dailyStreak(data)}` },
+    { label: 'day streak', value: String(dailyStreak(data)) },
     { label: 'longest streak', value: String(longestDailyStreak(data)) },
     { label: 'daily dives', value: String(finished.length) },
     { label: 'perfect dives', value: String(perfect) },
@@ -67,9 +68,7 @@ export function Logbook() {
                 const seen = data.creatures[c.id]
                 return (
                   <div key={c.id} className={`creature ${seen ? 'seen' : 'unseen'}`}>
-                    <span className="creature-emoji" aria-hidden>
-                      {seen ? c.emoji : '❔'}
-                    </span>
+                    <CreatureIcon id={c.id} size={40} />
                     <strong>{seen ? c.name : '???'}</strong>
                     <span className="muted small">{seen ? c.fact : c.hint}</span>
                   </div>
@@ -88,8 +87,8 @@ export function Logbook() {
               const best = Math.max(0, ...data.practice.filter((p) => p.topic === t.id).map((p) => p.maxDepth))
               return (
                 <li key={t.id}>
-                  <span>
-                    {t.emoji} {t.name}
+                  <span className="with-icon">
+                    <TopicIcon topic={t.id} size={18} /> {t.name}
                   </span>
                   <span className="muted">{best ? formatDepth(best) : '—'}</span>
                 </li>

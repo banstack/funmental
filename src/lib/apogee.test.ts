@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import type { AppData, DailyResult } from '../types'
-import { DAILY_LENGTH, EPOCH, dailyDate, dailyHeight, dailyNumber, dailyQuestions, dailyTopic, shareText } from './daily'
+import * as server from '../../server/scores.ts'
+import { DAILY_LENGTH, DAILY_POINTS, EPOCH, MAX_POINTS, dailyDate, dailyHeight, dailyNumber, dailyPoints, dailyQuestions, dailyTopic, shareText } from './daily'
+import { standingFrom, standingText } from './standing'
 import { emptyData, migrate } from './data'
 import { addDays, longestStreak, streak } from './dates'
 import { mergeAppData } from './merge'
@@ -51,7 +53,36 @@ describe('daily launch', () => {
   })
 
   it('builds a share grid', () => {
-    expect(shareText(12, 'History', [true, true, true, false, true, true, false])).toBe('Apogee #12 · History\n🟦🟦⬜⬛🟧🟪⬛  30 AU')
+    expect(shareText(12, 'History', [true, true, true, false, true, true, false])).toBe('Apogee #12 · History\n🟦🟦⬜⬛🟧🟪⬛  11/19 pts · 30 AU')
+  })
+})
+
+describe('daily points', () => {
+  it('scores each right answer by its difficulty, up to 19', () => {
+    expect(MAX_POINTS).toBe(19)
+    expect(dailyPoints(Array(7).fill(true))).toBe(19)
+    expect(dailyPoints([true, true, true, true, true, true, false])).toBe(14)
+    expect(dailyPoints([false, false, false, false, false, false, true])).toBe(5)
+  })
+
+  it('matches the copy the server scores with', () => {
+    expect(server.DAILY_POINTS).toEqual(DAILY_POINTS)
+    expect(server.EPOCH).toBe(EPOCH)
+    const answers = [true, false, true, true, false, true, true]
+    expect(server.pointsFor(answers)).toBe(dailyPoints(answers))
+  })
+
+  it('compares a score with everyone else on the launch', () => {
+    const counts = Array(20).fill(0)
+    counts[5] = 2
+    counts[10] = 1 // you
+    counts[19] = 1
+    const s = standingFrom(counts, 10, true)
+    expect(s).toEqual({ score: 10, others: 3, beat: 2 / 3 })
+    expect(standingText(s, true)).toBe('You beat 66% of the 3 other players today.')
+    expect(standingText(standingFrom(counts, 19, false), false)).toBe('That beats 75% of the 4 players who flew it.')
+    expect(standingText(standingFrom([0, 1], 1, true), true)).toMatch(/first to finish/)
+    expect(standingText(standingFrom([1, 1], 1, true), true)).toBe('You beat the one other player today!')
   })
 })
 

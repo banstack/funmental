@@ -15,6 +15,7 @@ import {
   type SessionUser,
 } from './auth.ts'
 import type { Db } from './db.ts'
+import { isAnswers, isCurrentLaunch, isPlayerId, MAX_POINTS, pointsFor } from './scores.ts'
 
 const COOKIE = 'fm_session'
 const MAX_SAVE_BYTES = '2mb'
@@ -29,6 +30,8 @@ interface Options {
   authLimit?: number
   /** Allow POST /api/dev/unlock, which unlocks Practice for free. Never in production. */
   allowDevUnlock?: boolean
+  /** Daily score submissions allowed per IP per 15 minutes. */
+  scoreLimit?: number
 }
 
 type AuthedRequest = Request & { user?: SessionUser }
@@ -48,12 +51,13 @@ function readCookie(req: Request, name: string): string | undefined {
   return undefined
 }
 
-export function createApp({ db, staticDir, secureCookies = false, authLimit = 20, allowDevUnlock = false }: Options) {
+export function createApp({ db, staticDir, secureCookies = false, authLimit = 20, allowDevUnlock = false, scoreLimit = 30 }: Options) {
   const app = express()
   app.disable('x-powered-by')
   app.set('trust proxy', 1) // Railway terminates TLS in front of us.
 
   const authAttempt = rateLimiter(authLimit, 15 * 60 * 1000)
+  const scoreAttempt = rateLimiter(scoreLimit, 15 * 60 * 1000)
 
   const setSessionCookie = (res: Response, token: string) =>
     res.cookie(COOKIE, token, {
@@ -201,6 +205,54 @@ export function createApp({ db, staticDir, secureCookies = false, authLimit = 20
     }
     const current = await db.query('SELECT training, version, updated_at FROM saves WHERE user_id = $1', [userId])
     res.status(409).json(saveBody(current.rows[0]))
+  })
+
+  /** How many players finished launch n with each score, from 0 to MAX_POINTS. */
+  const scoreCounts = async (n: number) => {
+    const counts = Array<number>(MAX_POINTS + 1).fill(0)
+    const { rows } = await db.query<{ score: number; players: number }>('SELECT score, count(*)::int AS players FROM daily_scores WHERE n = $1 GROUP BY score', [n])
+    for (const r of rows) counts[r.score] = r.players
+    return counts
+  }
+
+  const launchNumber = (req: Request) => {
+    const n = Number(req.params.n)
+    return Number.isInteger(n) && n >= 1 ? n : null
+  }
+
+  api.get('/daily/:n/scores', async (req, res) => {
+    const n = launchNumber(req)
+    if (n === null) {
+      res.status(400).json({ error: 'Unknown launch' })
+      return
+    }
+    res.json({ counts: await scoreCounts(n), max: MAX_POINTS })
+  })
+
+  /**
+   * Record a finished Daily Launch and return how everyone scored. The first
+   * result per player is final; `score` is the one on record.
+   */
+  api.post('/daily/:n/scores', async (req: AuthedRequest, res) => {
+    const n = launchNumber(req)
+    const { player, answers } = req.body ?? {}
+    if (n === null || !isCurrentLaunch(n)) {
+      res.status(400).json({ error: "Only today's launch can be scored." })
+      return
+    }
+    if (!isPlayerId(player) || !isAnswers(answers)) {
+      res.status(400).json({ error: 'Expected { player, answers }' })
+      return
+    }
+    if (!scoreAttempt(req.ip ?? 'unknown')) {
+      res.status(429).json({ error: 'Too many scores. Try again in a few minutes.' })
+      return
+    }
+    const user = await userForSession(db, readCookie(req, COOKIE))
+    const key = user ? `u:${user.id}` : player
+    await db.query('INSERT INTO daily_scores (n, player, score) VALUES ($1, $2, $3) ON CONFLICT (n, player) DO NOTHING', [n, key, pointsFor(answers)])
+    const { rows } = await db.query<{ score: number }>('SELECT score FROM daily_scores WHERE n = $1 AND player = $2', [n, key])
+    res.json({ counts: await scoreCounts(n), max: MAX_POINTS, score: rows[0].score })
   })
 
   app.use('/api', api)

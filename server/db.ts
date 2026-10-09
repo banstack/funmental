@@ -46,5 +46,15 @@ export async function migrate(db: Db) {
       unlocked_at timestamptz,
       source text
     );
+
+    -- One finished Daily Launch per player, first result final. player is
+    -- 'u:<user id>' when signed in, else a random id the browser keeps.
+    CREATE TABLE IF NOT EXISTS daily_scores (
+      n integer NOT NULL,
+      player text NOT NULL,
+      score smallint NOT NULL,
+      created_at timestamptz NOT NULL DEFAULT now(),
+      PRIMARY KEY (n, player)
+    );
   `)
 }

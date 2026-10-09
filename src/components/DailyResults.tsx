@@ -47,6 +47,7 @@ export function DailyResults({ n, topic, answers, children }: { n: number; topic
             <span className="review-mark" aria-label={answers[i] ? 'Right' : 'Missed'}>
               {answers[i] ? '✓' : '✕'}
             </span>
+            {q.question.image && <img className={`review-picture ${q.question.image.kind}`} src={q.question.image.src} alt="" />}
             <div>
               <p>{q.question.prompt}</p>
               <p className="muted small">

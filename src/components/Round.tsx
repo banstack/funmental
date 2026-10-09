@@ -69,6 +69,7 @@ export function Round({ asked, onAnswered, onNext, nextLabel = 'Next', outcome }
         <span style={{ width: `${(left / QUESTION_SECONDS) * 100}%` }} />
       </div>
       <h2 className="prompt">{asked.question.prompt}</h2>
+      {asked.question.image && <img className={`picture ${asked.question.image.kind}`} src={asked.question.image.src} alt={asked.question.image.alt} draggable={false} />}
       <div className="choices">
         {asked.choices.map((c, i) => {
           const state = !done ? '' : i === asked.answerIndex ? 'right' : i === picked ? 'wrong' : 'dim'

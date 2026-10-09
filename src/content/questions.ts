@@ -1,5 +1,6 @@
 import { hashString } from '../lib/rng'
 import type { TopicId } from '../lib/topics'
+import type { PictureKind } from './pictures'
 import { food } from './topics/food'
 import { general } from './topics/general'
 import { geography } from './topics/geography'
@@ -19,6 +20,8 @@ export interface TriviaQuestion {
   /** Correct answer first; shuffle before showing. */
   answers: [string, string, string, string]
   explanation?: string
+  /** A flag or country outline shown above the choices (see src/content/pictures.ts). */
+  image?: { kind: PictureKind; src: string; alt: string }
 }
 
 export const BANKS: Record<TopicId, RawQuestion[]> = { general, history, science, screen, geography, music, sports, food }

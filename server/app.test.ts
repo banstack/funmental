@@ -4,6 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import { hashPassword, rateLimiter, verifyPassword } from './auth.ts'
 import { createApp } from './app.ts'
 import { createPool, migrate, type Db } from './db.ts'
+import { utcDailyNumber } from './scores.ts'
 
 describe('password hashing', () => {
   it('verifies the right password and rejects others', async () => {
@@ -147,6 +148,44 @@ describe.skipIf(!url)('API', () => {
     dev.close()
     expect(unlock.status).toBe(200)
     expect((await api('GET', '/me')).body.unlocked).toBe(true)
+  })
+
+  it('records the first daily score per player and reports how everyone scored', async () => {
+    await db.query('TRUNCATE daily_scores')
+    const n = utcDailyNumber()
+    const anon = client()
+    const all = Array(7).fill(true)
+    const post = (c: ReturnType<typeof client>, player: string, answers: boolean[], launch = n) => c('POST', `/daily/${launch}/scores`, { player, answers })
+
+    const first = await post(anon, 'a'.repeat(32), [true, true, true, true, true, true, false])
+    expect(first.status).toBe(200)
+    expect(first.body.score).toBe(14)
+    expect(first.body.counts).toHaveLength(20)
+    expect(first.body.counts[14]).toBe(1)
+
+    // The first result is final.
+    const again = await post(anon, 'a'.repeat(32), all)
+    expect(again.body.score).toBe(14)
+    expect(again.body.counts[19]).toBe(0)
+
+    // A signed-in player counts once, whichever browser id they send.
+    const user = client()
+    await user('POST', '/auth/signup', { email: 'sc@example.com', password: 'longenough' })
+    await post(user, 'b'.repeat(32), all)
+    expect((await post(user, 'c'.repeat(32), [false, false, false, false, false, false, false])).body.score).toBe(19)
+
+    const read = await anon('GET', `/daily/${n}/scores`)
+    expect(read.body.counts[14] + read.body.counts[19]).toBe(2)
+  })
+
+  it('only scores the current launch, with well-formed answers', async () => {
+    const c = client()
+    const n = utcDailyNumber()
+    expect((await c('POST', `/daily/${n - 5}/scores`, { player: 'a'.repeat(32), answers: Array(7).fill(true) })).status).toBe(400)
+    expect((await c('POST', `/daily/${n}/scores`, { player: 'short', answers: Array(7).fill(true) })).status).toBe(400)
+    expect((await c('POST', `/daily/${n}/scores`, { player: 'a'.repeat(32), answers: [true] })).status).toBe(400)
+    expect((await c('POST', `/daily/${n}/scores`, { player: 'a'.repeat(32), answers: Array(7).fill('yes') })).status).toBe(400)
+    expect((await c('GET', '/daily/abc/scores')).status).toBe(400)
   })
 
   it('rate-limits repeated auth attempts', async () => {

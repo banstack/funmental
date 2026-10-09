@@ -1,18 +1,30 @@
 import { useMemo, useState } from 'react'
-import { DAILY_ZONE, dailyHeight, dailyQuestions, shareText } from '../lib/daily'
+import { DAILY_ZONE, MAX_POINTS, dailyHeight, dailyPoints, dailyQuestions, shareText } from '../lib/daily'
 import { MILESTONES, ZONES, formatAltitude } from '../lib/space'
 import { ClimbProfile } from './ClimbCharts'
 import { TopicIcon } from './Icons'
 import { shareResult } from '../lib/share'
+import { standingText, useStanding } from '../lib/standing'
 import { topicMeta, type TopicId } from '../lib/topics'
 
-/** End-of-launch summary: altitude, the share grid, and each question with its answer. */
-export function DailyResults({ n, topic, answers, children }: { n: number; topic: TopicId; answers: readonly boolean[]; children?: React.ReactNode }) {
+interface Props {
+  n: number
+  topic: TopicId
+  answers: readonly boolean[]
+  /** Submit this as the player's score for the day. Replays only compare. */
+  record?: boolean
+  children?: React.ReactNode
+}
+
+/** End-of-launch summary: altitude, points and how they compare, the share grid, and each question with its answer. */
+export function DailyResults({ n, topic, answers, record = false, children }: Props) {
   const height = dailyHeight(answers)
   const meta = topicMeta(topic)
   const questions = useMemo(() => dailyQuestions(n), [n])
   const [shared, setShared] = useState<string | null>(null)
   const right = answers.filter(Boolean).length
+  const points = dailyPoints(answers)
+  const standing = useStanding(n, answers, record)
 
   const share = async () => {
     const r = await shareResult(shareText(n, meta.name, answers))
@@ -29,6 +41,10 @@ export function DailyResults({ n, topic, answers, children }: { n: number; topic
         {right === 7 ? 'You reached the center of the galaxy!' : height === 0 ? 'You stayed on the launch pad today.' : `You reached ${MILESTONES[height - 1].name}.`}{' '}
         {right} of 7 right.
       </p>
+      <p className="results-points">
+        <strong>{points}</strong> of {MAX_POINTS} points
+      </p>
+      {standing && <p className="standing">{standingText(standing, record)}</p>}
       <div className="squares" aria-label={`${right} of 7 right`}>
         {answers.map((ok, i) => (
           <span key={i} className={`square ${ok ? `z-${ZONES[DAILY_ZONE[i]].id}` : 'miss'}`} />

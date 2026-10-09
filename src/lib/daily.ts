@@ -62,8 +62,17 @@ export function dailyHeight(answers: readonly boolean[]): number {
   return Math.min(MAX_HEIGHT, answers.filter(Boolean).length)
 }
 
+/** Each right answer scores its difficulty in points (Easy 1 to Expert 5), so the Expert question is worth five Easy ones. */
+export const DAILY_POINTS: readonly number[] = DAILY_DIFFICULTY
+
+export const MAX_POINTS = DAILY_POINTS.reduce((a, b) => a + b, 0)
+
+export function dailyPoints(answers: readonly boolean[]): number {
+  return answers.reduce((sum, ok, i) => sum + (ok ? DAILY_POINTS[i] : 0), 0)
+}
+
 /** Wordle-style result to paste into a chat. */
 export function shareText(n: number, topicName: string, answers: readonly boolean[]): string {
   const squares = answers.map((ok, i) => (ok ? ZONES[DAILY_ZONE[i]].square : '⬛')).join('')
-  return `Apogee #${n} · ${topicName}\n${squares}  ${formatAltitude(dailyHeight(answers))}`
+  return `Apogee #${n} · ${topicName}\n${squares}  ${dailyPoints(answers)}/${MAX_POINTS} pts · ${formatAltitude(dailyHeight(answers))}`
 }

@@ -28,7 +28,7 @@ export function Daily() {
   if (showResults || (saved.finishedAt !== null && !playedHere)) {
     return (
       <div className="page">
-        <DailyResults n={n} topic={topic} answers={saved.answers}>
+        <DailyResults n={n} topic={topic} answers={saved.answers} record>
           <Link to="/" className="btn ghost">
             Back to Earth
           </Link>

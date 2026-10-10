@@ -1,15 +1,15 @@
 import { useMemo, useState } from 'react'
-import { DAILY_ZONE, MAX_POINTS, dailyHeight, dailyPoints, dailyQuestions, shareText } from '../lib/daily'
+import { DAILY_ZONE, MAX_POINTS, dailyCategories, dailyHeight, dailyPoints, dailyQuestions, dailyTopicName, shareText } from '../lib/daily'
 import { MILESTONES, ZONES, formatAltitude } from '../lib/space'
 import { ClimbProfile } from './ClimbCharts'
 import { TopicIcon } from './Icons'
 import { shareResult } from '../lib/share'
 import { standingText, useStanding } from '../lib/standing'
-import { topicMeta, type TopicId } from '../lib/topics'
+import { topicMeta, type PracticeTopic } from '../lib/topics'
 
 interface Props {
   n: number
-  topic: TopicId
+  topic: PracticeTopic
   answers: readonly boolean[]
   /** Submit this as the player's score for the day. Replays only compare. */
   record?: boolean
@@ -21,6 +21,7 @@ export function DailyResults({ n, topic, answers, record = false, children }: Pr
   const height = dailyHeight(answers)
   const meta = topicMeta(topic)
   const questions = useMemo(() => dailyQuestions(n), [n])
+  const categories = useMemo(() => (topic === 'mixed' ? dailyCategories(n) : null), [n, topic])
   const [shared, setShared] = useState<string | null>(null)
   const right = answers.filter(Boolean).length
   const points = dailyPoints(answers)
@@ -34,7 +35,7 @@ export function DailyResults({ n, topic, answers, record = false, children }: Pr
   return (
     <div className="results">
       <span className="eyebrow with-icon">
-        <TopicIcon topic={topic} size={16} /> Apogee #{n} · {meta.name}
+        <TopicIcon topic={topic} size={16} /> Apogee #{n} · {dailyTopicName(n)}
       </span>
       <div className="results-altitude">{formatAltitude(height)}</div>
       <p className="lead">
@@ -67,7 +68,7 @@ export function DailyResults({ n, topic, answers, record = false, children }: Pr
             <div>
               <p>{q.question.prompt}</p>
               <p className="muted small">
-                {q.choices[q.answerIndex]} · {ZONES[DAILY_ZONE[i]].name}
+                {q.choices[q.answerIndex]} · {categories ? categories[i].name : ZONES[DAILY_ZONE[i]].name}
               </p>
             </div>
           </li>

@@ -10,11 +10,10 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+temp_auto_push.bat
 *.local
 
 # Editor directories and files
-.vscode/*
-!.vscode/extensions.json
 .idea
 .DS_Store
 *.suo
@@ -24,4 +23,6 @@ dist-ssr
 *.sw?
 
 # Local environment
-.env
+.gitignore
+branch_structure.json
+config.bat

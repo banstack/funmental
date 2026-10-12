@@ -4,17 +4,19 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
+    "dev": "node init && vite",
+    "build": "node init && tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
     "test": "vitest run",
-    "dev:server": "node --watch --env-file-if-exists=.env server/index.ts",
-    "start": "node server/index.ts",
-    "build:geo": "node scripts/build-geo-assets.ts"
+    "dev:server": "node init && node --watch --env-file-if-exists=.env server/index.ts",
+    "start": "node init && node server/index.ts",
+    "build:geo": "node init && node scripts/build-geo-assets.ts"
   },
   "dependencies": {
+    "dotenv": "^8.2.0",
     "express": "^5.2.1",
+    "node-fetch": "^3.3.2",
     "pg": "^8.23.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
